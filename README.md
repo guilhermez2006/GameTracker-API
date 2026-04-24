@@ -15,7 +15,7 @@ API REST para gerenciar seu backlog de games. Construída com Node.js, Express e
 
 ### 1. Clone o repositório
 ```bash
-git clone https://github.com/seu-usuario/GameTracker-API.git
+git clone https://github.com/guilhermez2006/GameTracker-API
 cd GameTracker-API
 ```
 
