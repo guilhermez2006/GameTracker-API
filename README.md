@@ -1,20 +1,22 @@
-# DevClub-NodeJS 🚀
+# GameTracker-API 🎮
 
-API REST construída com Node.js, Express e Prisma com MongoDB Atlas. Projeto em evolução contínua.
+API REST para gerenciar seu backlog de games. Construída com Node.js, Express e Prisma com MongoDB Atlas.
 
 ## Tecnologias
 
 - Node.js
 - Express
-- Prisma (ORM)
+- Prisma ORM
 - MongoDB Atlas
+- JSON Web Token (JWT)
+- Bcryptjs
 
 ## Como rodar o projeto
 
 ### 1. Clone o repositório
 ```bash
-git clone https://github.com/guilhermez2006/DevClub-NodeJS
-cd DevClub-NodeJS
+git clone https://github.com/seu-usuario/GameTracker-API.git
+cd GameTracker-API
 ```
 
 ### 2. Instale as dependências
@@ -23,13 +25,15 @@ npm install
 ```
 
 ### 3. Configure o banco de dados
-Crie um arquivo `.env` na raiz do projeto com sua connection string do MongoDB Atlas:
+Crie um arquivo `.env` na raiz do projeto:
 ```
 DATABASE_URL="mongodb+srv://usuario:senha@cluster.mongodb.net/NomeDoBanco?appName=nome"
+JWT_SECRET=suaChaveSecretaAqui123!@#
 ```
 
-### 4. Gere o client do Prisma
+### 4. Sincronize o banco e gere o client do Prisma
 ```bash
+npx prisma db push
 npx prisma generate
 ```
 
@@ -42,13 +46,23 @@ O servidor sobe em `http://localhost:3000`
 
 ## Rotas disponíveis
 
+### Autenticação (públicas)
 | Método | Rota | Descrição |
 |--------|------|-----------|
-| GET | /usuarios | Lista todos os usuários |
-| GET | /usuarios/:id | Lista um usuário por ID |
-| POST | /usuarios | Cria um novo usuário |
-| PUT | /usuarios/:id | Edita um usuário |
-| DELETE | /usuarios/:id | Deleta um usuário |
+| POST | /cadastro | Cria um novo usuário |
+| POST | /login | Autentica e retorna o token JWT |
+
+### Games (protegidas — requer token JWT)
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| GET | /games | Lista todos os games |
+| GET | /games/:id | Busca um game por ID |
+| POST | /games | Adiciona um game ao backlog |
+| PUT | /games/:id | Edita um game |
+| DELETE | /games/:id | Remove um game |
+
+> Para acessar as rotas protegidas, envie o token no header:
+> `Authorization: Bearer <seu_token>`
 
 ## Estrutura do projeto
 
@@ -56,10 +70,13 @@ O servidor sobe em `http://localhost:3000`
 ├── prisma/
 │   └── schema.prisma
 ├── routes/
-│   └── usuariosRoutes.js
+│   └── gamesRoutes.js
 ├── src/
 │   └── Controllers/
-│       └── usuariosController.js
+│       ├── gamesController.js
+│       └── authController.js
+│   └── Models/
+│       └── Game.js
 ├── .env
 ├── server.js
 └── package.json
