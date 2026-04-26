@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GameTracker — Login</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body class="login-page">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo-icon">🎮</div>
+        <h1>GAME<span>TRACKER</span></h1>
+        <p>Gerencie seu backlog de games</p>
+      </div>
+
+      <!-- Tabs Login / Cadastro -->
+      <div class="login-tabs">
+        <button class="login-tab active" id="tab-login">Entrar</button>
+        <button class="login-tab" id="tab-register">Cadastrar</button>
+      </div>
+
+      <!-- Formulário de Login -->
+      <form id="form-login">
+        <div class="form-group">
+          <label class="form-label" for="login-email">Email</label>
+          <input
+            class="form-input"
+            id="login-email"
+            type="email"
+            placeholder="seu@email.com"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="login-password">Senha</label>
+          <input
+            class="form-input"
+            id="login-password"
+            type="password"
+            placeholder="••••••••"
+            required
+          />
+        </div>
+        <button class="btn-submit" type="submit" id="btn-login">ENTRAR</button>
+      </form>
+
+      <!-- Formulário de Cadastro (oculto por padrão) -->
+      <form id="form-register" style="display: none">
+        <div class="form-group">
+          <label class="form-label" for="reg-name">Nome</label>
+          <input
+            class="form-input"
+            id="reg-name"
+            type="text"
+            placeholder="Seu nome"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-email">Email</label>
+          <input
+            class="form-input"
+            id="reg-email"
+            type="email"
+            placeholder="seu@email.com"
+            required
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="reg-password">Senha</label>
+          <input
+            class="form-input"
+            id="reg-password"
+            type="password"
+            placeholder="••••••••"
+            required
+          />
+        </div>
+        <button class="btn-submit" type="submit" id="btn-register">
+          CRIAR CONTA
+        </button>
+      </form>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="js/auth.js"></script>
+  </body>
+</html>

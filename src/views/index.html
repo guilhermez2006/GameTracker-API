@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GameTracker — Backlog</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <!-- ── HEADER ── -->
+    <header class="header">
+      <a href="index.html" class="header-logo">
+        <div class="logo-icon">🎮</div>
+        <span class="logo-text">GAME<span>TRACKER</span></span>
+      </a>
+
+      <nav class="header-nav">
+        <div class="header-stats">
+          <div class="stat-item">
+            <span class="stat-value" id="stat-total">0</span>
+            <span class="stat-label">Total</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value" id="stat-playing">0</span>
+            <span class="stat-label">Jogando</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value" id="stat-completed">0</span>
+            <span class="stat-label">Zerados</span>
+          </div>
+        </div>
+        <button class="btn-logout" id="btn-logout">Sair</button>
+      </nav>
+    </header>
+
+    <!-- ── FILTROS ── -->
+    <div class="filters-bar">
+      <input
+        type="text"
+        class="search-input"
+        id="search-input"
+        placeholder="Buscar game..."
+      />
+      <button class="filter-btn active" data-filter="ALL">Todos</button>
+      <button class="filter-btn" data-filter="PLAYING">Jogando</button>
+      <button class="filter-btn" data-filter="BACKLOG">Backlog</button>
+      <button class="filter-btn" data-filter="COMPLETED">Zerados</button>
+      <button class="filter-btn" data-filter="PAUSED">Pausados</button>
+      <button class="filter-btn" data-filter="DROPPED">Dropados</button>
+    </div>
+
+    <!-- ── GRID ── -->
+    <main class="main-content">
+      <div class="section-header">
+        <span class="section-title" id="section-label">Todos os games</span>
+      </div>
+      <div class="games-grid" id="games-grid">
+        <!-- Cards renderizados via JS -->
+      </div>
+    </main>
+
+    <!-- ── BOTÃO FLUTUANTE ── -->
+    <button class="fab" id="btn-add" title="Adicionar game">+</button>
+
+    <!-- ── MODAL ADICIONAR/EDITAR ── -->
+    <div class="modal-overlay" id="modal-overlay">
+      <div class="modal">
+        <div class="modal-header">
+          <span class="modal-title" id="modal-title">NOVO GAME</span>
+          <button class="modal-close" id="modal-close">✕</button>
+        </div>
+        <form id="game-form">
+          <input type="hidden" id="game-id" />
+
+          <div class="form-group">
+            <label class="form-label" for="input-title">Título</label>
+            <input
+              class="form-input"
+              id="input-title"
+              type="text"
+              placeholder="Ex: Elden Ring"
+              required
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="input-platform">Plataforma</label>
+              <input
+                class="form-input"
+                id="input-platform"
+                type="text"
+                placeholder="Ex: PC"
+              />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="input-genre">Gênero</label>
+              <input
+                class="form-input"
+                id="input-genre"
+                type="text"
+                placeholder="Ex: RPG"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="input-status">Status</label>
+              <select class="form-select" id="input-status">
+                <option value="BACKLOG">Backlog</option>
+                <option value="PLAYING">Jogando</option>
+                <option value="PAUSED">Pausado</option>
+                <option value="COMPLETED">Zerado</option>
+                <option value="DROPPED">Dropado</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="input-rating">Nota (0-10)</label>
+              <input
+                class="form-input"
+                id="input-rating"
+                type="number"
+                min="0"
+                max="10"
+                placeholder="Ex: 9"
+              />
+            </div>
+          </div>
+
+          <button class="btn-submit" type="submit" id="btn-submit">
+            SALVAR
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ── TOAST ── -->
+    <div class="toast" id="toast"></div>
+
+    <!-- <script src="js/script.js"></script> -->
+  </body>
+</html>
