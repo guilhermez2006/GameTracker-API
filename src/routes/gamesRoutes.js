@@ -1,22 +1,22 @@
 import express from "express";
-import * as GamesController from "../src/Controllers/gamesController.js";
-import { autenticacao } from "../src/Middlewares/auth.js";
-import { login, criarUsuario } from "../src/Controllers/authController.js"; // Criar usuário costuma ir no Auth agora
+// Removido o "../src" e ajustado para o caminho relativo correto dentro da pasta src
+import * as GamesController from "../Controllers/gamesController.js";
+import { autenticacao } from "../Middlewares/auth.js";
+import { login, criarUsuario } from "../Controllers/authController.js";
 
 const router = express.Router();
 
-// --- ROTAS PÚBLICAS (Login e Cadastro de Conta) ---
+// --- ROTAS PÚBLICAS ---
 router.post("/cadastro", criarUsuario); 
 router.post("/login", login);
 
 // --- ROTAS DE GAMES (Protegidas) ---
-// O 'autenticacao' garante que só quem tá logado mexe na agenda
 router.use(autenticacao); 
 
-router.post("/games", GamesController.adicionarJogo);        // Adiciona novo game
-router.get("/games", GamesController.listarJogos);          // Lista seu backlog
-router.get("/games/:id", GamesController.buscarJogoId);     // Detalhes de um jogo
-router.put("/games/:id", GamesController.editarJogo);       // Mudar status (ex: jogando -> zerado)
-router.delete("/games/:id", GamesController.deletarJogo);    // Remove da lista
+router.post("/games", GamesController.adicionarJogo);
+router.get("/games", GamesController.listarJogos);
+router.get("/games/:id", GamesController.buscarJogoId);
+router.put("/games/:id", GamesController.editarJogo);
+router.delete("/games/:id", GamesController.deletarJogo);
 
 export default router;
