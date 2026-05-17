@@ -5,18 +5,19 @@ const prisma = new PrismaClient();
 // 1. ADICIONAR JOGO
 export const adicionarJogo = async (req, res) => {
   try {
-    // Pegamos os campos de JOGO que vêm do corpo da requisição (JSON)
-    const { title, platform, status, genre, rating, userId } = req.body;
+    const { title, platform, status, genre, rating } = req.body;
+    const userId = req.usuarioId; // vem do middleware JWT
 
-    const jogo = await prisma.game.create({ // Use "game" (conforme seu schema)
+    const jogo = await prisma.game.create({
+      // Use "game" (conforme seu schema)
       data: {
         title,
         platform,
         status,
         genre,
         rating,
-        userId // O ID do dono do jogo (essencial!)
-      }
+        userId, // O ID do dono do jogo (essencial!)
+      },
     });
 
     res.status(201).json(jogo);
@@ -29,7 +30,7 @@ export const adicionarJogo = async (req, res) => {
 export const listarJogos = async (req, res) => {
   try {
     // Se a função é listar JOGOS, use prisma.game, não prisma.user!
-    const jogos = await prisma.game.findMany(); 
+    const jogos = await prisma.game.findMany();
     res.status(200).json(jogos);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -53,7 +54,7 @@ export const editarJogo = async (req, res) => {
   try {
     const jogoEditado = await prisma.game.update({
       where: { id: req.params.id }, // QUEM eu vou editar (ID da URL)
-      data: req.body,               // O QUE eu vou mudar (Body JSON)
+      data: req.body, // O QUE eu vou mudar (Body JSON)
     });
     res.status(200).json(jogoEditado);
   } catch (error) {

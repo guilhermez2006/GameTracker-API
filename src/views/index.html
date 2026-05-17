@@ -1,143 +1,143 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GameTracker — Backlog</title>
-    <link rel="stylesheet" href="css/style.css" />
-  </head>
-  <body>
-    <!-- ── HEADER ── -->
-    <header class="header">
-      <a href="index.html" class="header-logo">
-        <div class="logo-icon">🎮</div>
-        <span class="logo-text">GAME<span>TRACKER</span></span>
-      </a>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GameTracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
 
-      <nav class="header-nav">
-        <div class="header-stats">
-          <div class="stat-item">
-            <span class="stat-value" id="stat-total">0</span>
-            <span class="stat-label">Total</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-value" id="stat-playing">0</span>
-            <span class="stat-label">Jogando</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-value" id="stat-completed">0</span>
-            <span class="stat-label">Zerados</span>
-          </div>
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">◈</span>
+      <span class="logo-text">GAME<b>TRACKER</b></span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <span class="nav-label">BIBLIOTECA</span>
+      <button class="nav-item active" data-filter="ALL">
+        <span class="nav-icon">▦</span> Todos os Jogos
+        <span class="nav-count" id="count-all">0</span>
+      </button>
+      <button class="nav-item" data-filter="PLAYING">
+        <span class="nav-icon">▶</span> Jogando
+        <span class="nav-count" id="count-playing">0</span>
+      </button>
+      <button class="nav-item" data-filter="COMPLETED">
+        <span class="nav-icon">✓</span> Zerados
+        <span class="nav-count" id="count-completed">0</span>
+      </button>
+      <button class="nav-item" data-filter="BACKLOG">
+        <span class="nav-icon">≡</span> Backlog
+        <span class="nav-count" id="count-backlog">0</span>
+      </button>
+      <button class="nav-item" data-filter="PAUSED">
+        <span class="nav-icon">⏸</span> Pausados
+        <span class="nav-count" id="count-paused">0</span>
+      </button>
+      <button class="nav-item" data-filter="DROPPED">
+        <span class="nav-icon">✕</span> Dropados
+        <span class="nav-count" id="count-dropped">0</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar" id="user-avatar">G</div>
+        <div class="user-meta">
+          <span class="user-name" id="user-name">Jogador</span>
+          <span class="user-status">Online</span>
         </div>
-        <button class="btn-logout" id="btn-logout">Sair</button>
-      </nav>
+      </div>
+      <button class="btn-logout" id="btn-logout" title="Sair">⏻</button>
+    </div>
+  </aside>
+
+  <!-- ── CONTEÚDO PRINCIPAL ── -->
+  <div class="main-wrapper">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="page-title" id="page-title">Todos os Jogos</h1>
+      </div>
+      <div class="topbar-right">
+        <div class="search-wrapper">
+          <span class="search-icon">⌕</span>
+          <input type="text" id="search-input" class="search-input" placeholder="Buscar jogo..." />
+        </div>
+        <button class="btn-add" id="btn-add">+ Adicionar</button>
+      </div>
     </header>
 
-    <!-- ── FILTROS ── -->
-    <div class="filters-bar">
-      <input
-        type="text"
-        class="search-input"
-        id="search-input"
-        placeholder="Buscar game..."
-      />
-      <button class="filter-btn active" data-filter="ALL">Todos</button>
-      <button class="filter-btn" data-filter="PLAYING">Jogando</button>
-      <button class="filter-btn" data-filter="BACKLOG">Backlog</button>
-      <button class="filter-btn" data-filter="COMPLETED">Zerados</button>
-      <button class="filter-btn" data-filter="PAUSED">Pausados</button>
-      <button class="filter-btn" data-filter="DROPPED">Dropados</button>
-    </div>
-
-    <!-- ── GRID ── -->
-    <main class="main-content">
-      <div class="section-header">
-        <span class="section-title" id="section-label">Todos os games</span>
-      </div>
-      <div class="games-grid" id="games-grid">
-        <!-- Cards renderizados via JS -->
-      </div>
+    <!-- GRID -->
+    <main class="content">
+      <div class="games-grid" id="games-grid"></div>
     </main>
+  </div>
 
-    <!-- ── BOTÃO FLUTUANTE ── -->
-    <button class="fab" id="btn-add" title="Adicionar game">+</button>
-
-    <!-- ── MODAL ADICIONAR/EDITAR ── -->
-    <div class="modal-overlay" id="modal-overlay">
-      <div class="modal">
-        <div class="modal-header">
-          <span class="modal-title" id="modal-title">NOVO GAME</span>
-          <button class="modal-close" id="modal-close">✕</button>
-        </div>
-        <form id="game-form">
-          <input type="hidden" id="game-id" />
-
-          <div class="form-group">
-            <label class="form-label" for="input-title">Título</label>
-            <input
-              class="form-input"
-              id="input-title"
-              type="text"
-              placeholder="Ex: Elden Ring"
-              required
-            />
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="input-platform">Plataforma</label>
-              <input
-                class="form-input"
-                id="input-platform"
-                type="text"
-                placeholder="Ex: PC"
-              />
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="input-genre">Gênero</label>
-              <input
-                class="form-input"
-                id="input-genre"
-                type="text"
-                placeholder="Ex: RPG"
-              />
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label" for="input-status">Status</label>
-              <select class="form-select" id="input-status">
-                <option value="BACKLOG">Backlog</option>
-                <option value="PLAYING">Jogando</option>
-                <option value="PAUSED">Pausado</option>
-                <option value="COMPLETED">Zerado</option>
-                <option value="DROPPED">Dropado</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="input-rating">Nota (0-10)</label>
-              <input
-                class="form-input"
-                id="input-rating"
-                type="number"
-                min="0"
-                max="10"
-                placeholder="Ex: 9"
-              />
-            </div>
-          </div>
-
-          <button class="btn-submit" type="submit" id="btn-submit">
-            SALVAR
-          </button>
-        </form>
+  <!-- ── MODAL ── -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title">Novo Jogo</h2>
+        <button class="modal-close" id="modal-close">✕</button>
       </div>
+      <form id="game-form">
+        <input type="hidden" id="game-id" />
+
+        <div class="form-group">
+          <label class="form-label">Título *</label>
+          <input class="form-input" id="input-title" type="text" placeholder="Ex: Elden Ring" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Plataforma</label>
+            <input class="form-input" id="input-platform" type="text" placeholder="Ex: PC" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Gênero</label>
+            <input class="form-input" id="input-genre" type="text" placeholder="Ex: RPG" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Status</label>
+            <select class="form-select" id="input-status">
+              <option value="BACKLOG">Backlog</option>
+              <option value="PLAYING">Jogando</option>
+              <option value="PAUSED">Pausado</option>
+              <option value="COMPLETED">Zerado</option>
+              <option value="DROPPED">Dropado</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nota (0-10)</label>
+            <input class="form-input" id="input-rating" type="number" min="0" max="10" placeholder="Ex: 9" />
+          </div>
+        </div>
+
+        <!-- Campo de imagem — pronto pra API ou URL manual -->
+        <div class="form-group">
+          <label class="form-label">Capa (URL da imagem)</label>
+          <input class="form-input" id="input-cover" type="text" placeholder="Cole a URL da capa aqui" />
+          <span class="form-hint">Em breve: busca automática pela API</span>
+        </div>
+
+        <button class="btn-submit" type="submit">SALVAR JOGO</button>
+      </form>
     </div>
+  </div>
 
-    <!-- ── TOAST ── -->
-    <div class="toast" id="toast"></div>
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
 
-    <!-- <script src="js/script.js"></script> -->
-  </body>
+  <script src="js/script.js"></script>
+</body>
 </html>

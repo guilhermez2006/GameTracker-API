@@ -1,45 +1,58 @@
 const API_URL = 'http://localhost:3000';
 
-// ── ESTADO LOCAL ──────────────────────────────────────────────
-// Mantém os games em memória para filtrar sem nova requisição
+// ── ESTADO ───────────────────────────────────────────────────
 const state = {
   games: [],
-  activeFilter: 'ALL',
+  filter: 'ALL',
 };
-
-// ── HELPERS ──────────────────────────────────────────────────
 
 const getToken = () => localStorage.getItem('token');
 
-// Todas as chamadas à API passam por aqui — centraliza o header Authorization
+// Centraliza todas as chamadas à API com o token JWT
 const apiFetch = async (path, options = {}) => {
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${getToken()}`,
-      ...options.headers,
-    },
-  });
+  try {
+    const res = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${getToken()}`,
+        ...options.headers,
+      },
+    });
 
-  if (res.status === 401) {
-    // Token expirado ou inválido — redireciona para login
-    localStorage.removeItem('token');
-    window.location.href = 'login.html';
-    return;
+    if (res.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = 'login.html';
+      return null;
+    }
+
+    return res.json();
+  } catch {
+    showToast('Erro ao conectar com o servidor.', 'error');
+    return null;
   }
-
-  return res.json();
 };
 
+// ── INTEGRAÇÃO DE API DE IMAGENS ─────────────────────────────
+// Quando tiver a chave da API (RAWG, IGDB etc), implemente aqui.
+// A função recebe o título e deve retornar a URL da capa.
+const fetchGameCover = async (title) => {
+  // RAWG (rawg.io) — descomenta quando tiver a chave:
+  // const key = 'SUA_CHAVE_AQUI';
+  // const res = await fetch(`https://api.rawg.io/api/games?key=${key}&search=${encodeURIComponent(title)}&page_size=1`);
+  // const data = await res.json();
+  // return data.results?.[0]?.background_image || null;
+
+  return null; // Retorna null enquanto sem API
+};
+
+// ── HELPERS ──────────────────────────────────────────────────
 const showToast = (msg, type = '') => {
-  const toast = document.getElementById('toast');
-  toast.textContent = msg;
-  toast.className = `toast ${type} show`;
-  setTimeout(() => toast.classList.remove('show'), 3000);
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast ${type} show`;
+  setTimeout(() => el.classList.remove('show'), 3000);
 };
-
-// ── RENDERIZAÇÃO ──────────────────────────────────────────────
 
 const STATUS_LABELS = {
   PLAYING: 'Jogando',
@@ -49,102 +62,123 @@ const STATUS_LABELS = {
   PAUSED: 'Pausado',
 };
 
-const renderCard = (game) => `
-  <div class="game-card" data-status="${game.status}" data-id="${game._id || game.id}">
-    <div class="card-body">
-      <div class="card-title" title="${game.title}">${game.title}</div>
-      <div class="card-meta">
-        ${game.platform ? `<span class="tag">${game.platform}</span>` : ''}
-        ${game.genre ? `<span class="tag">${game.genre}</span>` : ''}
-      </div>
-    </div>
-    <div class="card-footer">
-      <span class="status-badge ${game.status}">${STATUS_LABELS[game.status] || game.status}</span>
-      <div class="card-rating">
-        ${game.rating ? `<span>★</span> ${game.rating}/10` : '—'}
-      </div>
-      <div class="card-actions">
-        <button class="btn-icon edit" onclick="openEditModal('${game._id || game.id}')">✎</button>
-        <button class="btn-icon" onclick="deleteGame('${game._id || game.id}')">✕</button>
-      </div>
-    </div>
-  </div>
-`;
+// ── RENDERIZAÇÃO ──────────────────────────────────────────────
+const renderCover = (game) => {
+  const cover = game.cover || game.coverUrl || null;
 
-const renderGrid = (games) => {
+  if (cover) {
+    return `<img src="${cover}" alt="${game.title}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'card-cover-placeholder\\'><span class=\\'placeholder-icon\\'>🎮</span><span class=\\'placeholder-title\\'>${game.title}</span></div>'" />`;
+  }
+
+  return `
+    <div class="card-cover-placeholder">
+      <span class="placeholder-icon">🎮</span>
+      <span class="placeholder-title">${game.title}</span>
+    </div>`;
+};
+
+const renderCard = (game) => {
+  const id = game._id || game.id;
+  const rating = game.rating ? `★ ${game.rating}` : '';
+
+  return `
+    <div class="game-card" data-status="${game.status}" data-id="${id}">
+      <div class="card-cover">
+        ${renderCover(game)}
+        <span class="status-dot ${game.status}"></span>
+        <div class="card-actions">
+          <button class="btn-action edit" onclick="openEdit('${id}')">✎</button>
+          <button class="btn-action delete" onclick="removeGame('${id}')">✕</button>
+        </div>
+      </div>
+      <div class="card-info">
+        <div class="card-title" title="${game.title}">${game.title}</div>
+        <div class="card-meta">
+          <span class="card-platform">${game.platform || '—'}</span>
+          ${rating ? `<span class="card-rating">${rating}</span>` : ''}
+        </div>
+      </div>
+    </div>`;
+};
+
+const updateCounts = () => {
+  const all = state.games;
+  document.getElementById('count-all').textContent = all.length;
+  document.getElementById('count-playing').textContent = all.filter(g => g.status === 'PLAYING').length;
+  document.getElementById('count-completed').textContent = all.filter(g => g.status === 'COMPLETED').length;
+  document.getElementById('count-backlog').textContent = all.filter(g => g.status === 'BACKLOG').length;
+  document.getElementById('count-paused').textContent = all.filter(g => g.status === 'PAUSED').length;
+  document.getElementById('count-dropped').textContent = all.filter(g => g.status === 'DROPPED').length;
+};
+
+const renderGrid = () => {
+  const query = document.getElementById('search-input').value.toLowerCase();
+  const filtered = state.games.filter(g => {
+    const matchFilter = state.filter === 'ALL' || g.status === state.filter;
+    const matchSearch = g.title.toLowerCase().includes(query);
+    return matchFilter && matchSearch;
+  });
+
   const grid = document.getElementById('games-grid');
-  if (!games.length) {
+
+  if (!filtered.length) {
     grid.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">🕹️</div>
-        <p>Nenhum game encontrado.</p>
+        <p>Nenhum jogo encontrado.</p>
       </div>`;
     return;
   }
-  grid.innerHTML = games.map(renderCard).join('');
-};
 
-const updateStats = () => {
-  document.getElementById('stat-total').textContent = state.games.length;
-  document.getElementById('stat-playing').textContent =
-    state.games.filter(g => g.status === 'PLAYING').length;
-  document.getElementById('stat-completed').textContent =
-    state.games.filter(g => g.status === 'COMPLETED').length;
-};
-
-// Aplica filtro de status + busca por texto sobre os dados em memória
-const applyFilters = () => {
-  const query = document.getElementById('search-input').value.toLowerCase();
-  const filtered = state.games.filter(g => {
-    const matchStatus = state.activeFilter === 'ALL' || g.status === state.activeFilter;
-    const matchSearch = g.title.toLowerCase().includes(query);
-    return matchStatus && matchSearch;
-  });
-  renderGrid(filtered);
+  grid.innerHTML = filtered.map(renderCard).join('');
 };
 
 // ── API CALLS ─────────────────────────────────────────────────
-
 const loadGames = async () => {
-  const data = await apiFetch('/jogos');
+  const data = await apiFetch('/games');
   if (!data) return;
   state.games = Array.isArray(data) ? data : [];
-  updateStats();
-  applyFilters();
+  updateCounts();
+  renderGrid();
 };
 
 const saveGame = async (payload, id = null) => {
+  // Tenta buscar capa via API se não tiver uma URL fornecida
+  if (!payload.cover && payload.title) {
+    payload.cover = await fetchGameCover(payload.title);
+  }
+
   const method = id ? 'PUT' : 'POST';
-  const path = id ? `/jogos/${id}` : '/jogos';
+  const path = id ? `/games/${id}` : '/games';
   const data = await apiFetch(path, { method, body: JSON.stringify(payload) });
+
   if (data) {
-    showToast(id ? 'Game atualizado!' : 'Game adicionado!', 'success');
+    showToast(id ? 'Jogo atualizado!' : 'Jogo adicionado!', 'success');
     closeModal();
     await loadGames();
   }
 };
 
-window.deleteGame = async (id) => {
-  if (!confirm('Remover esse game do backlog?')) return;
-  await apiFetch(`/jogos/${id}`, { method: 'DELETE' });
-  showToast('Game removido.', 'success');
-  await loadGames();
+window.removeGame = async (id) => {
+  if (!confirm('Remover esse jogo do backlog?')) return;
+  await apiFetch(`/games/${id}`, { method: 'DELETE' });
+  showToast('Jogo removido.', 'success');
+  state.games = state.games.filter(g => (g._id || g.id) !== id);
+  updateCounts();
+  renderGrid();
 };
 
 // ── MODAL ─────────────────────────────────────────────────────
-
-const openModal = () => {
-  document.getElementById('modal-overlay').classList.add('active');
-};
+const openModal = () => document.getElementById('modal-overlay').classList.add('active');
 
 const closeModal = () => {
   document.getElementById('modal-overlay').classList.remove('active');
   document.getElementById('game-form').reset();
   document.getElementById('game-id').value = '';
-  document.getElementById('modal-title').textContent = 'NOVO GAME';
+  document.getElementById('modal-title').textContent = 'Novo Jogo';
 };
 
-window.openEditModal = async (id) => {
+window.openEdit = (id) => {
   const game = state.games.find(g => (g._id || g.id) === id);
   if (!game) return;
 
@@ -154,44 +188,53 @@ window.openEditModal = async (id) => {
   document.getElementById('input-genre').value = game.genre || '';
   document.getElementById('input-status').value = game.status;
   document.getElementById('input-rating').value = game.rating || '';
-  document.getElementById('modal-title').textContent = 'EDITAR GAME';
+  document.getElementById('input-cover').value = game.cover || game.coverUrl || '';
+  document.getElementById('modal-title').textContent = 'Editar Jogo';
   openModal();
 };
 
 // ── EVENTOS ──────────────────────────────────────────────────
-
 document.getElementById('btn-add').addEventListener('click', openModal);
 document.getElementById('modal-close').addEventListener('click', closeModal);
-document.getElementById('modal-overlay').addEventListener('click', (e) => {
+document.getElementById('modal-overlay').addEventListener('click', e => {
   if (e.target === e.currentTarget) closeModal();
 });
 
 document.getElementById('game-form').addEventListener('submit', async (e) => {
   e.preventDefault();
+  const btn = document.getElementById('game-form').querySelector('.btn-submit');
+  btn.disabled = true;
+  btn.textContent = 'SALVANDO...';
+
   const id = document.getElementById('game-id').value;
-  const payload = {
+  await saveGame({
     title: document.getElementById('input-title').value,
     platform: document.getElementById('input-platform').value,
     genre: document.getElementById('input-genre').value,
     status: document.getElementById('input-status').value,
-    rating: document.getElementById('input-rating').value
-      ? Number(document.getElementById('input-rating').value)
-      : null,
-  };
-  await saveGame(payload, id || null);
+    rating: document.getElementById('input-rating').value ? Number(document.getElementById('input-rating').value) : null,
+    cover: document.getElementById('input-cover').value || null,
+  }, id || null);
+
+  btn.disabled = false;
+  btn.textContent = 'SALVAR JOGO';
 });
 
-// Filtros de status
-document.querySelectorAll('.filter-btn').forEach(btn => {
+// Sidebar — filtros
+document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    state.activeFilter = btn.dataset.filter;
-    applyFilters();
+    state.filter = btn.dataset.filter;
+
+    const labels = { ALL: 'Todos os Jogos', PLAYING: 'Jogando', COMPLETED: 'Zerados', BACKLOG: 'Backlog', PAUSED: 'Pausados', DROPPED: 'Dropados' };
+    document.getElementById('page-title').textContent = labels[state.filter] || 'Jogos';
+
+    renderGrid();
   });
 });
 
-document.getElementById('search-input').addEventListener('input', applyFilters);
+document.getElementById('search-input').addEventListener('input', renderGrid);
 
 document.getElementById('btn-logout').addEventListener('click', () => {
   localStorage.removeItem('token');
@@ -199,8 +242,6 @@ document.getElementById('btn-logout').addEventListener('click', () => {
 });
 
 // ── INIT ──────────────────────────────────────────────────────
-
-// Redireciona para login se não tiver token
 if (!getToken()) {
   window.location.href = 'login.html';
 } else {

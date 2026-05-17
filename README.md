@@ -22,6 +22,7 @@ cd GameTracker-API
 ### 2. Instale as dependências
 ```bash
 npm install
+npm install cors
 ```
 
 ### 3. Configure o banco de dados
