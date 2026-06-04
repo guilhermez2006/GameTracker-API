@@ -1,14 +1,16 @@
-import express from "express"
-import cors from "cors" // <--- ADICIONE ISSO
-import 'dotenv/config'
-import usuariosRoutes from "./routes/gamesRoutes.js"
+import express from "express";
+import cors from "cors"; 
+import 'dotenv/config';
+import usuariosRoutes from "./routes/gamesRoutes.js"; // Importando o arquivo unificado
 
-const app = express()
+const app = express();
 
-app.use(cors()) // <--- ADICIONE ISSO (IMPORTANTE: Antes das rotas!)
-app.use(express.json())
-app.use(usuariosRoutes)
+app.use(cors()); 
+app.use(express.json());
+
+// Carrega todas as rotas (Autenticação, Banco Prisma e Steam API)
+app.use(usuariosRoutes);
 
 app.listen(3000, () => {
-    console.log("Servidor rodando na porta 3000");
+    console.log("🚀 Servidor rodando lindamente na porta 3000");
 });
