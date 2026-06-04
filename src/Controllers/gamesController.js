@@ -1,22 +1,29 @@
 import pkg from "@prisma/client";
+import axios from "axios";
+
 const { PrismaClient } = pkg;
 const prisma = new PrismaClient();
 
-// 1. ADICIONAR JOGO
+const STEAM_SEARCH_URL = "https://store.steampowered.com/api/storesearch";
+const STEAM_DETAILS_URL = "https://store.steampowered.com/api/appdetails";
+
+// ─── CRUD DO BANCO (MongoDB / Prisma) ───────────────────────────────────
+
 export const adicionarJogo = async (req, res) => {
   try {
-    const { title, platform, status, genre, rating } = req.body;
-    const userId = req.usuarioId; // vem do middleware JWT
+    const { title, platform, status, genre, rating, image_url, description } = req.body;
+    const userId = req.usuarioId; 
 
     const jogo = await prisma.game.create({
-      // Use "game" (conforme seu schema)
       data: {
         title,
         platform,
         status,
         genre,
         rating,
-        userId, // O ID do dono do jogo (essencial!)
+        userId,
+        ...(image_url && { image_url }),
+        ...(description && { description })
       },
     });
 
@@ -26,10 +33,8 @@ export const adicionarJogo = async (req, res) => {
   }
 };
 
-// 2. LISTAR JOGOS
 export const listarJogos = async (req, res) => {
   try {
-    // Se a função é listar JOGOS, use prisma.game, não prisma.user!
     const jogos = await prisma.game.findMany();
     res.status(200).json(jogos);
   } catch (error) {
@@ -37,11 +42,10 @@ export const listarJogos = async (req, res) => {
   }
 };
 
-// 3. BUSCAR POR ID
 export const buscarJogoId = async (req, res) => {
   try {
     const jogo = await prisma.game.findUnique({
-      where: { id: req.params.id }, // O ID vem da URL
+      where: { id: req.params.id },
     });
     res.status(200).json(jogo);
   } catch (error) {
@@ -49,20 +53,31 @@ export const buscarJogoId = async (req, res) => {
   }
 };
 
-// 4. EDITAR JOGO
 export const editarJogo = async (req, res) => {
   try {
+    const idDoJogo = req.params.id || req.body.id || req.body._id;
+
+    if (!idDoJogo || idDoJogo === 'undefined') {
+      return res.status(400).json({ error: "ID do jogo inválido ou não fornecido." });
+    }
+
+    // Separa o id e userId para evitar que o Prisma tente atualizar campos restritos
+    const { id, _id, userId, ...updateData } = req.body;
+
+    console.log(`[Backend] Atualizando jogo ${idDoJogo} com os dados:`, updateData);
+
     const jogoEditado = await prisma.game.update({
-      where: { id: req.params.id }, // QUEM eu vou editar (ID da URL)
-      data: req.body, // O QUE eu vou mudar (Body JSON)
+      where: { id: idDoJogo },
+      data: updateData,
     });
-    res.status(200).json(jogoEditado);
+
+    return res.status(200).json(jogoEditado);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("[editarJogo] Erro crítico ao atualizar:", error.message);
+    return res.status(500).json({ error: error.message });
   }
 };
 
-// 5. DELETAR JOGO
 export const deletarJogo = async (req, res) => {
   try {
     await prisma.game.delete({
@@ -71,5 +86,68 @@ export const deletarJogo = async (req, res) => {
     res.status(200).json({ message: "Jogo deletado com sucesso!" });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+// ─── INTEGRAÇÃO COM A STEAM API ──────────────────────────────────────────
+
+export const getGameById = async (req, res) => {
+  const { appid } = req.params;
+
+  try {
+    const response = await axios.get(`${STEAM_DETAILS_URL}?appids=${appid}`);
+    const json = response.data;
+    const gameEntry = json[appid];
+
+    if (!gameEntry || !gameEntry.success) {
+      return res.status(404).json({ message: `Nenhum jogo encontrado para o appid ${appid}.` });
+    }
+
+    const data = gameEntry.data;
+    const game = {
+      appid:             data.steam_appid,
+      name:              data.name,
+      short_description: data.short_description,
+      header_image:      data.header_image,
+      screenshots:       data.screenshots?.map((s) => s.path_full) ?? [],
+    };
+
+    return res.status(200).json(game);
+  } catch (error) {
+    console.error("[getGameById] Erro interno:", error.message);
+    return res.status(500).json({ message: "Erro interno no servidor." });
+  }
+};
+
+export const searchGameByName = async (req, res) => {
+  const { name } = req.query;
+
+  if (!name || name.trim() === "") {
+    return res.status(400).json({ message: "O parâmetro 'name' é obrigatório." });
+  }
+
+  try {
+    const response = await axios.get(`${STEAM_SEARCH_URL}/?term=${encodeURIComponent(name)}&l=brazilian&cc=BR`);
+    const json = response.data;
+
+    if (!json || !json.items || json.items.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    const games = json.items.map((item) => {
+      const appId = item.id;
+      return {
+        appid: appId,
+        name: item.name,
+        short_description: "", 
+        header_image: `https://cdn.akamai.steamstatic.com/steam/apps/${appId}/header.jpg`,
+        screenshots: []
+      };
+    });
+
+    return res.status(200).json(games);
+  } catch (error) {
+    console.error("[searchGameByName] Erro na comunicação com a Steam:", error.message);
+    return res.status(200).json([]); 
   }
 };
