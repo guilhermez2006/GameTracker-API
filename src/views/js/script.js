@@ -1,6 +1,5 @@
 const API_URL = 'http://localhost:3000';
 
-// ── ESTADO ───────────────────────────────────────────────────
 const state = {
   games: [],
   filter: 'ALL',
@@ -8,7 +7,8 @@ const state = {
 
 const getToken = () => localStorage.getItem('token');
 
-// Centraliza todas as chamadas à API com o token JWT
+// ─── CONFIGURAÇÕES E UTILS DA API ────────────────────────────────────────
+
 const apiFetch = async (path, options = {}) => {
   try {
     const res = await fetch(`${API_URL}${path}`, {
@@ -33,20 +33,20 @@ const apiFetch = async (path, options = {}) => {
   }
 };
 
-// ── INTEGRAÇÃO DE API DE IMAGENS ─────────────────────────────
-// Quando tiver a chave da API (RAWG, IGDB etc), implemente aqui.
-// A função recebe o título e deve retornar a URL da capa.
 const fetchGameCover = async (title) => {
-  // RAWG (rawg.io) — descomenta quando tiver a chave:
-  // const key = 'SUA_CHAVE_AQUI';
-  // const res = await fetch(`https://api.rawg.io/api/games?key=${key}&search=${encodeURIComponent(title)}&page_size=1`);
-  // const data = await res.json();
-  // return data.results?.[0]?.background_image || null;
-
-  return null; // Retorna null enquanto sem API
+  if (!title) return null;
+  try {
+    const data = await apiFetch(`/steam/search?name=${encodeURIComponent(title)}`);
+    if (data && Array.isArray(data) && data.length > 0) {
+      return data[0].header_image || null;
+    }
+    return null;
+  } catch (error) {
+    console.error('Erro ao buscar capa na API da Steam:', error);
+    return null;
+  }
 };
 
-// ── HELPERS ──────────────────────────────────────────────────
 const showToast = (msg, type = '') => {
   const el = document.getElementById('toast');
   el.textContent = msg;
@@ -62,12 +62,14 @@ const STATUS_LABELS = {
   PAUSED: 'Pausado',
 };
 
-// ── RENDERIZAÇÃO ──────────────────────────────────────────────
+// ─── RENDERIZAÇÃO DA INTERFACE ───────────────────────────────────────────
+
 const renderCover = (game) => {
   const cover = game.cover || game.coverUrl || null;
 
+  // Usa outerHTML para substituir apenas a tag img quebrada sem afetar os botões do card
   if (cover) {
-    return `<img src="${cover}" alt="${game.title}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'card-cover-placeholder\\'><span class=\\'placeholder-icon\\'>🎮</span><span class=\\'placeholder-title\\'>${game.title}</span></div>'" />`;
+    return `<img src="${cover}" alt="${game.title}" loading="lazy" onerror="this.outerHTML='<div class=\\'card-cover-placeholder\\'><span class=\\'placeholder-icon\\'>🎮</span><span class=\\'placeholder-title\\'>${game.title}</span></div>'" />`;
   }
 
   return `
@@ -133,18 +135,36 @@ const renderGrid = () => {
   grid.innerHTML = filtered.map(renderCard).join('');
 };
 
-// ── API CALLS ─────────────────────────────────────────────────
+// ─── REQUISIÇÕES HTTP (AÇÕES do FRONT) ───────────────────────────────────
+
 const loadGames = async () => {
   const data = await apiFetch('/games');
   if (!data) return;
   state.games = Array.isArray(data) ? data : [];
   updateCounts();
   renderGrid();
+
+  // Busca assíncrona de capas para jogos antigos que ficaram sem imagem salva
+  state.games.forEach(async (game, index) => {
+    if (!game.cover || game.cover.trim() === "") {
+      const discoveredCover = await fetchGameCover(game.title);
+      if (discoveredCover) {
+        state.games[index].cover = discoveredCover;
+        renderGrid(); 
+        
+        const id = game._id || game.id;
+        await apiFetch(`/games/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ ...game, cover: discoveredCover })
+        });
+      }
+    }
+  });
 };
 
 const saveGame = async (payload, id = null) => {
-  // Tenta buscar capa via API se não tiver uma URL fornecida
   if (!payload.cover && payload.title) {
+    showToast('Buscando capa na Steam...', 'info');
     payload.cover = await fetchGameCover(payload.title);
   }
 
@@ -162,13 +182,14 @@ const saveGame = async (payload, id = null) => {
 window.removeGame = async (id) => {
   if (!confirm('Remover esse jogo do backlog?')) return;
   await apiFetch(`/games/${id}`, { method: 'DELETE' });
-  showToast('Jogo removido.', 'success');
+  showToast('Jogo removed.', 'success');
   state.games = state.games.filter(g => (g._id || g.id) !== id);
   updateCounts();
   renderGrid();
 };
 
-// ── MODAL ─────────────────────────────────────────────────────
+// ─── MODAL E FORMULÁRIOS ─────────────────────────────────────────────────
+
 const openModal = () => document.getElementById('modal-overlay').classList.add('active');
 
 const closeModal = () => {
@@ -183,17 +204,19 @@ window.openEdit = (id) => {
   if (!game) return;
 
   document.getElementById('game-id').value = id;
-  document.getElementById('input-title').value = game.title;
+  document.getElementById('input-title').value = game.title || '';
   document.getElementById('input-platform').value = game.platform || '';
   document.getElementById('input-genre').value = game.genre || '';
   document.getElementById('input-status').value = game.status;
   document.getElementById('input-rating').value = game.rating || '';
   document.getElementById('input-cover').value = game.cover || game.coverUrl || '';
+  
   document.getElementById('modal-title').textContent = 'Editar Jogo';
   openModal();
 };
 
-// ── EVENTOS ──────────────────────────────────────────────────
+// ─── LISTENERS E INICIALIZAÇÃO ───────────────────────────────────────────
+
 document.getElementById('btn-add').addEventListener('click', openModal);
 document.getElementById('modal-close').addEventListener('click', closeModal);
 document.getElementById('modal-overlay').addEventListener('click', e => {
@@ -207,12 +230,13 @@ document.getElementById('game-form').addEventListener('submit', async (e) => {
   btn.textContent = 'SALVANDO...';
 
   const id = document.getElementById('game-id').value;
+  
   await saveGame({
     title: document.getElementById('input-title').value,
     platform: document.getElementById('input-platform').value,
     genre: document.getElementById('input-genre').value,
-    status: document.getElementById('input-status').value,
-    rating: document.getElementById('input-rating').value ? Number(document.getElementById('input-rating').value) : null,
+    status: document.getElementById('input-status').value, 
+    rating: document.getElementById('input-rating').value ? Number(document.getElementById('input-rating').value) : null, 
     cover: document.getElementById('input-cover').value || null,
   }, id || null);
 
@@ -220,7 +244,6 @@ document.getElementById('game-form').addEventListener('submit', async (e) => {
   btn.textContent = 'SALVAR JOGO';
 });
 
-// Sidebar — filtros
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
@@ -241,7 +264,6 @@ document.getElementById('btn-logout').addEventListener('click', () => {
   window.location.href = 'login.html';
 });
 
-// ── INIT ──────────────────────────────────────────────────────
 if (!getToken()) {
   window.location.href = 'login.html';
 } else {
