@@ -288,7 +288,7 @@ body {
 .btn-add:hover { opacity: 0.85; transform: translateY(-1px); }
 
 /* ══════════════════════════════
-   GRID DE CARDS
+   GRID DE CARDS (ESTILO HYDRA)
 ══════════════════════════════ */
 .content {
   padding: 2rem;
@@ -297,8 +297,9 @@ body {
 
 .games-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1.2rem;
+  /* Cards mais largos na horizontal, estilo launcher */
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
 }
 
 /* CARD */
@@ -312,14 +313,15 @@ body {
   position: relative;
   animation: cardIn 0.25s ease forwards;
   opacity: 0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
 }
 
 .game-card:nth-child(1) { animation-delay: 0.02s; }
 .game-card:nth-child(2) { animation-delay: 0.04s; }
 .game-card:nth-child(3) { animation-delay: 0.06s; }
 .game-card:nth-child(4) { animation-delay: 0.08s; }
-.game-card:nth-child(5) { animation-delay: 0.10s; }
-.game-card:nth-child(6) { animation-delay: 0.12s; }
 
 @keyframes cardIn {
   from { opacity: 0; transform: translateY(10px); }
@@ -327,16 +329,16 @@ body {
 }
 
 .game-card:hover {
-  border-color: rgba(243,194,90,0.3);
+  border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-4px);
-  box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.7);
 }
 
-/* CAPA DO JOGO */
+/* CAPA DO JOGO (WIDESCREEN HORIZONTAL) */
 .card-cover {
   width: 100%;
-  /* Proporção de capa de jogo (600x800 aprox) */
-  aspect-ratio: 3/4;
+  /* Proporção 16:9 idêntica aos banners da Steam/Hydra */
+  aspect-ratio: 16 / 9; 
   background: var(--bg-2);
   position: relative;
   overflow: hidden;
@@ -350,7 +352,9 @@ body {
   transition: transform 0.4s ease;
 }
 
-.game-card:hover .card-cover img { transform: scale(1.05); }
+.game-card:hover .card-cover img { 
+  transform: scale(1.04); 
+}
 
 /* Fallback quando não tem imagem */
 .card-cover-placeholder {
@@ -361,32 +365,34 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  background: linear-gradient(135deg, #131324, #1a1a3a);
 }
 
 .card-cover-placeholder .placeholder-icon {
-  font-size: 2.5rem;
-  opacity: 0.3;
+  font-size: 2.2rem;
+  opacity: 0.2;
 }
 
 .card-cover-placeholder .placeholder-title {
   font-family: var(--font-display);
-  font-size: 0.9rem;
-  letter-spacing: 1px;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
   color: var(--text-2);
   text-align: center;
-  padding: 0 8px;
+  padding: 0 12px;
+  font-weight: 500;
 }
 
 /* Badge de status no canto da capa */
 .status-dot {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 10px;
+  right: 10px;
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  box-shadow: 0 0 6px currentColor;
+  box-shadow: 0 0 8px currentColor;
+  z-index: 5;
 }
 
 .status-dot.PLAYING { background: var(--green); color: var(--green); }
@@ -397,18 +403,20 @@ body {
 
 /* INFO DO CARD */
 .card-info {
-  padding: 10px;
+  padding: 12px 14px;
+  background: var(--bg-3);
 }
 
 .card-title {
   font-family: var(--font-display);
   font-size: 0.95rem;
   letter-spacing: 0.5px;
-  color: var(--text);
+  color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  font-weight: 600;
 }
 
 .card-meta {
@@ -418,59 +426,75 @@ body {
 }
 
 .card-platform {
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   color: var(--text-3);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  font-weight: 500;
+}
+.card-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Preenche todo o espaço sem distorcer as proporções */
+  object-position: center 20%; /* Foca no centro, um pouco mais pro topo (salva os logos) */
+  display: block;
+  transition: transform 0.5s ease;
 }
 
 .card-rating {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--gold);
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
+  font-weight: 600;
 }
 
-/* Ações aparecem no hover */
+/* BOTÕES DE AÇÃO FLUTUANTES (Alinhados na horizontal) */
 .card-actions {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 10px;
+  left: 10px;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row; /* Mudado para linha para caber melhor no card deitado */
+  gap: 6px;
   opacity: 0;
   transition: var(--transition);
+  z-index: 5;
 }
 
-.game-card:hover .card-actions { opacity: 1; }
+.game-card:hover .card-actions { 
+  opacity: 1; 
+}
 
 .btn-action {
   width: 28px;
   height: 28px;
   border-radius: 6px;
-  border: none;
+  border: 1px solid rgba(255,255,255,0.1);
   cursor: pointer;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: var(--transition);
   backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 
 .btn-action.edit {
-  background: rgba(74,158,255,0.85);
+  background: rgba(44, 120, 220, 0.85);
   color: #fff;
 }
 
 .btn-action.delete {
-  background: rgba(232,64,64,0.85);
+  background: rgba(200, 40, 40, 0.85);
   color: #fff;
 }
 
-.btn-action:hover { transform: scale(1.1); }
+.btn-action:hover { 
+  transform: scale(1.08); 
+}
 
 /* ── EMPTY STATE ── */
 .empty-state {
