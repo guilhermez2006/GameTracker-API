@@ -109,13 +109,31 @@ const renderGrid = () => {
   );
   grid.innerHTML = filtered.map(renderCard).join("");
 };
+const updateCounts = () => {
+  const all = state.games;
+  
+  // Certifique-se de que esses IDs existem no seu HTML
+  const elements = {
+    "count-all": all.length,
+    "count-playing": all.filter((g) => g.status === "PLAYING").length,
+    "count-completed": all.filter((g) => g.status === "COMPLETED").length,
+    "count-backlog": all.filter((g) => g.status === "BACKLOG").length,
+    "count-paused": all.filter((g) => g.status === "PAUSED").length,
+    "count-dropped": all.filter((g) => g.status === "DROPPED").length,
+  };
 
+  for (const id in elements) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = elements[id];
+  }
+};
 // ─── AÇÕES ──────────────────────────────────────────────────────────────
 
 const loadGames = async () => {
   const data = await apiFetch("/games");
   state.games = Array.isArray(data) ? data : [];
   renderGrid();
+  updateCounts(); 
 };
 
 const saveGame = async (payload, id = null) => {
