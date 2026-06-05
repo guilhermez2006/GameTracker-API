@@ -11,7 +11,8 @@ const STEAM_DETAILS_URL = "https://store.steampowered.com/api/appdetails";
 
 export const adicionarJogo = async (req, res) => {
   try {
-    const { title, platform, status, genre, rating, image_url, description } = req.body;
+    // Alinhado com o schema.prisma: usando 'cover' no lugar de 'image_url'
+    const { title, platform, status, genre, rating, cover, description } = req.body;
     const userId = req.usuarioId; 
 
     const jogo = await prisma.game.create({
@@ -22,14 +23,46 @@ export const adicionarJogo = async (req, res) => {
         genre,
         rating,
         userId,
-        ...(image_url && { image_url }),
-        ...(description && { description })
+        cover, 
+        description
       },
     });
 
     res.status(201).json(jogo);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+export const editarJogo = async (req, res) => {
+  try {
+    const idDoJogo = req.params.id;
+    if (!idDoJogo) return res.status(400).json({ error: "ID inválido." });
+
+    const { title, platform, status, genre, rating, cover, description } = req.body;
+
+    // 2. Monta um objeto dinâmico só com o que realmente foi enviado para atualizar
+    const updateData = {};
+    if (title) updateData.title = title;
+    if (platform) updateData.platform = platform;
+    if (status) updateData.status = status; 
+    if (genre !== undefined) updateData.genre = genre;
+    if (rating !== undefined) updateData.rating = rating;
+    if (cover !== undefined) updateData.cover = cover;
+    if (description !== undefined) updateData.description = description;
+
+    console.log(`[Backend] Atualizando jogo ${idDoJogo}:`, updateData);
+
+    // 3. Executa a atualização 
+    const jogoEditado = await prisma.game.update({
+      where: { id: idDoJogo },
+      data: updateData,
+    });
+
+    return res.status(200).json(jogoEditado);
+  } catch (error) {
+    console.error("[editarJogo] Erro crítico:", error.message);
+    return res.status(500).json({ error: error.message });
   }
 };
 
@@ -50,31 +83,6 @@ export const buscarJogoId = async (req, res) => {
     res.status(200).json(jogo);
   } catch (error) {
     res.status(500).json({ error: error.message });
-  }
-};
-
-export const editarJogo = async (req, res) => {
-  try {
-    const idDoJogo = req.params.id || req.body.id || req.body._id;
-
-    if (!idDoJogo || idDoJogo === 'undefined') {
-      return res.status(400).json({ error: "ID do jogo inválido ou não fornecido." });
-    }
-
-    // Separa o id e userId para evitar que o Prisma tente atualizar campos restritos
-    const { id, _id, userId, ...updateData } = req.body;
-
-    console.log(`[Backend] Atualizando jogo ${idDoJogo} com os dados:`, updateData);
-
-    const jogoEditado = await prisma.game.update({
-      where: { id: idDoJogo },
-      data: updateData,
-    });
-
-    return res.status(200).json(jogoEditado);
-  } catch (error) {
-    console.error("[editarJogo] Erro crítico ao atualizar:", error.message);
-    return res.status(500).json({ error: error.message });
   }
 };
 
