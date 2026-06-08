@@ -4,7 +4,6 @@ const prisma = new PrismaClient()
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 
-// 1. LOGIN DE USUÁRIO
 export const login = async (req, res) => {
     try {
         const { email, password } = req.body
@@ -23,16 +22,13 @@ export const login = async (req, res) => {
     }
 }
 
-// 2. CRIAR USUÁRIO (O que estava faltando!)
 export const criarUsuario = async (req, res) => {
     try {
         const { name, email, password } = req.body
 
-        // Verifica se o usuário já existe
         const usuarioExiste = await prisma.user.findUnique({ where: { email } })
         if (usuarioExiste) return res.status(400).json({ message: "Este e-mail já está cadastrado" })
 
-        // Criptografa a senha antes de salvar (Segurança!)
         const salt = await bcrypt.genSalt(10)
         const hashPassword = await bcrypt.hash(password, salt)
 
