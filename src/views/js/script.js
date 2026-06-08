@@ -8,7 +8,7 @@ const state = {
 
 const getToken = () => localStorage.getItem("token");
 
-// ─── API UTILS ──────────────────────────────────────────────────────────
+// ─── API UTILITIES ──────────────────────────────────────────────────────────
 
 const apiFetch = async (path, options = {}) => {
   try {
@@ -56,7 +56,27 @@ const showToast = (msg, type = "") => {
   setTimeout(() => el.classList.remove("show"), 3000);
 };
 
-// ─── MODAL CONTROLS (FORÇADO VIA DOM) ───────────────────────────────────
+// ─── HAMBURGER MENU ─────────────────────────────────────────────────────────
+
+window.toggleSidebar = () => {
+  const sidebar = document.querySelector(".sidebar");
+  const hamburger = document.getElementById("hamburger-btn");
+  if (sidebar) {
+    sidebar.classList.toggle("active");
+    hamburger.classList.toggle("active");
+  }
+};
+
+const closeSidebar = () => {
+  const sidebar = document.querySelector(".sidebar");
+  const hamburger = document.getElementById("hamburger-btn");
+  if (sidebar) {
+    sidebar.classList.remove("active");
+    hamburger.classList.remove("active");
+  }
+};
+
+// ─── MODAL CONTROLS ─────────────────────────────────────────────────────────
 
 window.openModal = () => {
   document.getElementById("game-form").reset();
@@ -99,13 +119,13 @@ window.openEdit = (id) => {
   }
 };
 
-// ─── RENDERIZAÇÃO ───────────────────────────────────────────────────────
+// ─── RENDERING FUNCTIONS ────────────────────────────────────────────────────
 
 const renderCover = (game) => {
   const url =
     game.cover ||
     "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&q=80";
-  return `<img src="${url}" alt="${game.title}" onerror="this.src='https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&q=80';">`;
+  return `<img src="${url}" alt="${game.title}" onerror="this.src='https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&q=80';" />`;
 };
 
 const renderCard = (game) => {
@@ -186,7 +206,7 @@ const updateCounts = () => {
   }
 };
 
-// ─── ACTIONS ────────────────────────────────────────────────────────────
+// ─── CRUD OPERATIONS ────────────────────────────────────────────────────────
 
 const loadGames = async () => {
   const data = await apiFetch("/games");
@@ -235,7 +255,7 @@ window.removeGame = async (id) => {
   loadGames();
 };
 
-// ─── INITIALIZATION & LISTENERS ─────────────────────────────────────────
+// ─── EVENT LISTENERS ────────────────────────────────────────────────────────
 
 document.querySelectorAll(".sidebar-nav .nav-item").forEach((btn) => {
   btn.addEventListener("click", (e) => {
@@ -258,6 +278,7 @@ document.querySelectorAll(".sidebar-nav .nav-item").forEach((btn) => {
       titles[state.filter] || "JOGOS";
 
     renderGrid();
+    closeSidebar();
   });
 });
 
@@ -295,6 +316,8 @@ document.getElementById("btn-logout")?.addEventListener("click", () => {
   localStorage.removeItem("token");
   window.location.href = "login.html";
 });
+
+// ─── INITIALIZATION ─────────────────────────────────────────────────────────
 
 if (!getToken()) window.location.href = "login.html";
 else loadGames();
