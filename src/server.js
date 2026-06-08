@@ -12,5 +12,5 @@ app.use(express.json());
 app.use(usuariosRoutes);
 
 app.listen(3000, () => {
-    console.log("🚀 Servidor rodando lindamente na porta 3000");
+    console.log("Servidor rodando na porta 3000 🚀");
 });

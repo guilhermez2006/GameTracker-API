@@ -10,7 +10,6 @@ router.post("/cadastro", criarUsuario);
 router.post("/login", login);
 
 // --- ROTAS DE BUSCA DIRETA NA STEAM ---
-// Corrigido aqui para usar os nomes exatos do controller do Claude
 router.get("/steam/search", GamesController.searchGameByName); 
 router.get("/steam/:appid", GamesController.getGameById);    
 

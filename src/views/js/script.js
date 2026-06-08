@@ -3,11 +3,12 @@ const API_URL = "http://localhost:3000";
 const state = {
   games: [],
   filter: "ALL",
+  search: "",
 };
 
 const getToken = () => localStorage.getItem("token");
 
-// ─── UTILS DA API ────────────────────────────────────────────────────────
+// ─── API UTILS ──────────────────────────────────────────────────────────
 
 const apiFetch = async (path, options = {}) => {
   try {
@@ -49,18 +50,61 @@ const fetchGameCover = async (title) => {
 
 const showToast = (msg, type = "") => {
   const el = document.getElementById("toast");
+  if (!el) return;
   el.textContent = msg;
   el.className = `toast ${type} show`;
   setTimeout(() => el.classList.remove("show"), 3000);
 };
 
-// ─── RENDERIZAÇÃO SEGURA ──────────────────────────────────────────────────
+// ─── MODAL CONTROLS (FORÇADO VIA DOM) ───────────────────────────────────
+
+window.openModal = () => {
+  document.getElementById("game-form").reset();
+  document.getElementById("game-id").value = "";
+  document.getElementById("modal-title").textContent = "Novo Jogo";
+
+  const overlay = document.getElementById("modal-overlay");
+  if (overlay) {
+    overlay.style.display = "flex";
+    overlay.classList.add("show", "active");
+  }
+};
+
+window.closeModal = () => {
+  const overlay = document.getElementById("modal-overlay");
+  if (overlay) {
+    overlay.style.display = "none";
+    overlay.classList.remove("show", "active");
+  }
+};
+
+window.openEdit = (id) => {
+  const game = state.games.find((g) => (g._id || g.id) === id);
+  if (!game) return;
+
+  document.getElementById("game-id").value = id;
+  document.getElementById("input-title").value = game.title || "";
+  document.getElementById("input-platform").value = game.platform || "";
+  document.getElementById("input-genre").value = game.genre || "";
+  document.getElementById("input-status").value = game.status || "";
+  document.getElementById("input-rating").value = game.rating || "";
+  document.getElementById("input-cover").value = game.cover || "";
+
+  document.getElementById("modal-title").textContent = "Editar Jogo";
+
+  const overlay = document.getElementById("modal-overlay");
+  if (overlay) {
+    overlay.style.display = "flex";
+    overlay.classList.add("show", "active");
+  }
+};
+
+// ─── RENDERIZAÇÃO ───────────────────────────────────────────────────────
 
 const renderCover = (game) => {
   const url =
     game.cover ||
     "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&q=80";
-  // Removi o uso de "/>" para evitar erros de parser do navegador
   return `<img src="${url}" alt="${game.title}" onerror="this.src='https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&q=80';">`;
 };
 
@@ -88,15 +132,14 @@ const renderCard = (game) => {
         <div class="card-title">${game.title}</div>
         <div class="custom-dropdown">
           <button class="dropdown-trigger" onclick="this.parentElement.classList.toggle('open')">${currentLabel}</button>
-<div class="dropdown-menu">
-  ${Object.keys(labels)
-    .map(
-      (s) => `
-    <div class="dropdown-item ${s}" onclick="changeGameStatus('${id}', '${s}')">${labels[s]}</div>
-  `,
-    )
-    .join("")}
-</div>
+          <div class="dropdown-menu">
+            ${Object.keys(labels)
+              .map(
+                (s) =>
+                  `<div class="dropdown-item ${s}" onclick="changeGameStatus('${id}', '${s}')">${labels[s]}</div>`,
+              )
+              .join("")}
+          </div>
         </div>
       </div>
     </div>`;
@@ -104,22 +147,37 @@ const renderCard = (game) => {
 
 const renderGrid = () => {
   const grid = document.getElementById("games-grid");
-  const filtered = state.games.filter(
-    (g) => state.filter === "ALL" || g.status === state.filter,
-  );
+  if (!grid) return;
+  const filtered = state.games.filter((g) => {
+    const matchStatus = state.filter === "ALL" || g.status === state.filter;
+    const matchSearch = g.title
+      .toLowerCase()
+      .includes(state.search.toLowerCase());
+    return matchStatus && matchSearch;
+  });
   grid.innerHTML = filtered.map(renderCard).join("");
+  updateCounts();
 };
+
 const updateCounts = () => {
   const all = state.games;
-  
-  // Certifique-se de que esses IDs existem no seu HTML
   const elements = {
     "count-all": all.length,
-    "count-playing": all.filter((g) => g.status === "PLAYING").length,
-    "count-completed": all.filter((g) => g.status === "COMPLETED").length,
-    "count-backlog": all.filter((g) => g.status === "BACKLOG").length,
-    "count-paused": all.filter((g) => g.status === "PAUSED").length,
-    "count-dropped": all.filter((g) => g.status === "DROPPED").length,
+    "count-playing": all.filter(
+      (g) => (g.status || "").toUpperCase() === "PLAYING",
+    ).length,
+    "count-completed": all.filter(
+      (g) => (g.status || "").toUpperCase() === "COMPLETED",
+    ).length,
+    "count-backlog": all.filter(
+      (g) => (g.status || "").toUpperCase() === "BACKLOG",
+    ).length,
+    "count-paused": all.filter(
+      (g) => (g.status || "").toUpperCase() === "PAUSED",
+    ).length,
+    "count-dropped": all.filter(
+      (g) => (g.status || "").toUpperCase() === "DROPPED",
+    ).length,
   };
 
   for (const id in elements) {
@@ -127,20 +185,23 @@ const updateCounts = () => {
     if (el) el.textContent = elements[id];
   }
 };
-// ─── AÇÕES ──────────────────────────────────────────────────────────────
+
+// ─── ACTIONS ────────────────────────────────────────────────────────────
 
 const loadGames = async () => {
   const data = await apiFetch("/games");
   state.games = Array.isArray(data) ? data : [];
   renderGrid();
-  updateCounts(); 
 };
 
 const saveGame = async (payload, id = null) => {
   const method = id ? "PUT" : "POST";
   const path = id ? `/games/${id}` : "/games";
 
-  // Limpeza do payload: garantir que só envia campos permitidos ao Prisma
+  if (!payload.cover && payload.title) {
+    payload.cover = await fetchGameCover(payload.title);
+  }
+
   const cleanPayload = {
     title: payload.title,
     platform: payload.platform,
@@ -154,8 +215,9 @@ const saveGame = async (payload, id = null) => {
     method,
     body: JSON.stringify(cleanPayload),
   });
+
   if (data) {
-    closeModal();
+    window.closeModal();
     loadGames();
   }
 };
@@ -173,9 +235,42 @@ window.removeGame = async (id) => {
   loadGames();
 };
 
-// ─── INICIALIZAÇÃO ──────────────────────────────────────────────────────
+// ─── INITIALIZATION & LISTENERS ─────────────────────────────────────────
 
-document.getElementById("game-form").addEventListener("submit", async (e) => {
+document.querySelectorAll(".sidebar-nav .nav-item").forEach((btn) => {
+  btn.addEventListener("click", (e) => {
+    document
+      .querySelectorAll(".sidebar-nav .nav-item")
+      .forEach((b) => b.classList.remove("active"));
+    const target = e.currentTarget;
+    target.classList.add("active");
+    state.filter = target.getAttribute("data-filter");
+
+    const titles = {
+      ALL: "TODOS OS JOGOS",
+      PLAYING: "JOGANDO",
+      COMPLETED: "ZERADOS",
+      BACKLOG: "BACKLOG",
+      PAUSED: "PAUSADOS",
+      DROPPED: "DROPADOS",
+    };
+    document.getElementById("page-title").textContent =
+      titles[state.filter] || "JOGOS";
+
+    renderGrid();
+  });
+});
+
+document.getElementById("btn-add")?.addEventListener("click", window.openModal);
+document
+  .getElementById("modal-close")
+  ?.addEventListener("click", window.closeModal);
+
+document.getElementById("modal-overlay")?.addEventListener("click", (e) => {
+  if (e.target.id === "modal-overlay") window.closeModal();
+});
+
+document.getElementById("game-form")?.addEventListener("submit", async (e) => {
   e.preventDefault();
   const id = document.getElementById("game-id").value;
   const payload = {
@@ -189,6 +284,16 @@ document.getElementById("game-form").addEventListener("submit", async (e) => {
     cover: document.getElementById("input-cover").value || null,
   };
   await saveGame(payload, id || null);
+});
+
+document.getElementById("search-input")?.addEventListener("input", (e) => {
+  state.search = e.target.value;
+  renderGrid();
+});
+
+document.getElementById("btn-logout")?.addEventListener("click", () => {
+  localStorage.removeItem("token");
+  window.location.href = "login.html";
 });
 
 if (!getToken()) window.location.href = "login.html";
