@@ -68,8 +68,8 @@ O servidor sobe em `http://localhost:3000`
 ## Estrutura do projeto
 
 ```
-├── prisma/
 GameTracker-API/
+├── prisma/
 ├── prisma/
 │   └── schema.prisma
 ├── src/
