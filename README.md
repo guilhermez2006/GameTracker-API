@@ -69,16 +69,25 @@ O servidor sobe em `http://localhost:3000`
 
 ```
 ├── prisma/
+GameTracker-API/
+├── prisma/
 │   └── schema.prisma
-├── routes/
-│   └── gamesRoutes.js
 ├── src/
-│   └── Controllers/
-│       ├── gamesController.js
-│       └── authController.js
-│   └── Models/
-│       └── Game.js
-├── .env
-├── server.js
+│   ├── Controllers/
+│   │   ├── authController.js
+│   │   └── gamesController.js
+│   ├── Middlewares/
+│   │   └── auth.js
+│   ├── models/
+│   │   └── user.js
+│   ├── routes/
+│   │   └── gamesRoutes.js
+│   └── js/
+│       ├── auth.js
+│       └── script.js
+├── index.html
+├── login.html
+└── server.js
+└── .env
 └── package.json
 ```
