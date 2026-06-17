@@ -251,8 +251,14 @@ window.changeGameStatus = async (id, newStatus) => {
 };
 
 window.removeGame = async (id) => {
-  await apiFetch(`/games/${id}`, { method: "DELETE" });
-  loadGames();
+  const data = await apiFetch(`/games/${id}`, {
+    method: "DELETE",
+  });
+
+  if (data !== null) {
+    showToast("Jogo removido com sucesso!", "success");
+    await loadGames();
+  }
 };
 
 // ─── EVENT LISTENERS ────────────────────────────────────────────────────────
