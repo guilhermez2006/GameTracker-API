@@ -293,18 +293,34 @@ document.getElementById("modal-overlay")?.addEventListener("click", (e) => {
 
 document.getElementById("game-form")?.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const id = document.getElementById("game-id").value;
-  const payload = {
-    title: document.getElementById("input-title").value,
-    platform: document.getElementById("input-platform").value,
-    genre: document.getElementById("input-genre").value,
-    status: document.getElementById("input-status").value,
-    rating: document.getElementById("input-rating").value
-      ? Number(document.getElementById("input-rating").value)
-      : null,
-    cover: document.getElementById("input-cover").value || null,
-  };
-  await saveGame(payload, id || null);
+
+  const btn = e.target.querySelector('button[type="submit"]');
+
+  if (btn.disabled) return;
+
+  btn.disabled = true;
+  btn.textContent = "Salvando...";
+
+  try {
+    const id = document.getElementById("game-id").value;
+
+    const payload = {
+      title: document.getElementById("input-title").value,
+      platform: document.getElementById("input-platform").value,
+      genre: document.getElementById("input-genre").value,
+      status: document.getElementById("input-status").value,
+      rating: document.getElementById("input-rating").value
+        ? Number(document.getElementById("input-rating").value)
+        : null,
+      cover: document.getElementById("input-cover").value || null,
+    };
+
+    await saveGame(payload, id || null);
+
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Salvar Jogo";
+  }
 });
 
 document.getElementById("search-input")?.addEventListener("input", (e) => {
