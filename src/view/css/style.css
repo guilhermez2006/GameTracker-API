@@ -858,21 +858,23 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-image: linear-gradient(rgba(10,10,15,0.4), rgba(10,10,15,0.7)), url('../img/eldenRing.jpg');
+  background-image:
+    linear-gradient(rgba(10, 10, 15, 0.4), rgba(10, 10, 15, 0.7)),
+    url("../img/eldenRing.jpg");
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
 }
 
 .login-card {
-  background: rgba(15,15,20,0.6);
+  background: rgba(15, 15, 20, 0.6);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(243,194,90,0.2);
+  border: 1px solid rgba(243, 194, 90, 0.2);
   border-radius: 16px;
   padding: 2rem 2.5rem;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
 }
 
 .login-logo {
@@ -911,7 +913,7 @@ body {
 
 .login-tabs {
   display: flex;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.3);
   border-radius: var(--radius);
   padding: 3px;
   margin-bottom: 1.4rem;
@@ -935,4 +937,24 @@ body {
 .login-tab.active {
   background: var(--gold-dim);
   color: var(--gold);
+}
+
+/* =============================================
+   LOADING BUTTON
+   ============================================= */
+
+.loader {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

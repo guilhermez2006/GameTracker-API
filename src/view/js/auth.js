@@ -1,43 +1,59 @@
-const API_URL = "https://gametracker-api-7uvv.onrender.com";
+const API_URL =
+  location.hostname === "localhost"
+    ? "http://localhost:3000"
+    : "https://gametracker-api-7uvv.onrender.com";
 
+// Seletores do DOM
+const toastEl = document.getElementById("toast");
+const tabLogin = document.getElementById("tab-login");
+const tabRegister = document.getElementById("tab-register");
+const formLogin = document.getElementById("form-login");
+const formRegister = document.getElementById("form-register");
+
+const loginBtn = document.getElementById("btn-login");
+const loginEmail = document.getElementById("login-email");
+const loginPassword = document.getElementById("login-password");
+
+const registerBtn = document.getElementById("btn-register");
+const regName = document.getElementById("reg-name");
+const regEmail = document.getElementById("reg-email");
+const regPassword = document.getElementById("reg-password");
+
+// Sistema de Toast
 const showToast = (msg, type = "") => {
-  const toast = document.getElementById("toast");
-  toast.textContent = msg;
-  toast.className = `toast ${type} show`;
-  setTimeout(() => toast.classList.remove("show"), 3000);
+  toastEl.textContent = msg;
+  toastEl.className = `toast ${type} show`;
+  setTimeout(() => toastEl.classList.remove("show"), 3000);
 };
 
-// ─── AUTHENTICATION TABS ─────────────────────────────────────────────────────
-
-document.getElementById("tab-login").addEventListener("click", () => {
-  document.getElementById("tab-login").classList.add("active");
-  document.getElementById("tab-register").classList.remove("active");
-  document.getElementById("form-login").style.display = "block";
-  document.getElementById("form-register").style.display = "none";
+// Alternância entre as abas de Login e Cadastro
+tabLogin.addEventListener("click", () => {
+  tabLogin.classList.add("active");
+  tabRegister.classList.remove("active");
+  formLogin.style.display = "block";
+  formRegister.style.display = "none";
 });
 
-document.getElementById("tab-register").addEventListener("click", () => {
-  document.getElementById("tab-register").classList.add("active");
-  document.getElementById("tab-login").classList.remove("active");
-  document.getElementById("form-register").style.display = "block";
-  document.getElementById("form-login").style.display = "none";
+tabRegister.addEventListener("click", () => {
+  tabRegister.classList.add("active");
+  tabLogin.classList.remove("active");
+  formRegister.style.display = "block";
+  formLogin.style.display = "none";
 });
 
-// ─── LOGIN FORM ──────────────────────────────────────────────────────────────
-
-document.getElementById("form-login").addEventListener("submit", async (e) => {
+// Envio do formulário de Login
+formLogin.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const btn = document.getElementById("btn-login");
-  btn.innerHTML = '<span class="loader"></span>';
-  btn.disabled = true;
+  loginBtn.innerHTML = '<span class="loader"></span>';
+  loginBtn.disabled = true;
 
   try {
     const res = await fetch(`${API_URL}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        email: document.getElementById("login-email").value,
-        password: document.getElementById("login-password").value,
+        email: loginEmail.value,
+        password: loginPassword.value,
       }),
     });
 
@@ -53,49 +69,48 @@ document.getElementById("form-login").addEventListener("submit", async (e) => {
   } catch {
     showToast("Servidor indisponível.", "error");
   } finally {
-    btn.textContent = "ENTRAR";
-    btn.disabled = false;
+    if (!window.location.href.includes("index.html")) {
+      loginBtn.innerHTML = "ENTRAR";
+      loginBtn.disabled = false;
+    }
   }
 });
 
-// ─── REGISTER FORM ───────────────────────────────────────────────────────────
+// Envio do formulário de Cadastro
+formRegister.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  registerBtn.innerHTML = '<span class="loader"></span>';
+  registerBtn.disabled = true;
 
-document
-  .getElementById("form-register")
-  .addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById("btn-register");
-    btn.innerHTML = '<span class="loader"></span>';
-    btn.disabled = true;
+  try {
+    const res = await fetch(`${API_URL}/cadastro`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: regName.value,
+        email: regEmail.value,
+        password: regPassword.value,
+      }),
+    });
 
-    try {
-      const res = await fetch(`${API_URL}/cadastro`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: document.getElementById("reg-name").value,
-          email: document.getElementById("reg-email").value,
-          password: document.getElementById("reg-password").value,
-        }),
-      });
+    const data = await res.json();
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        showToast(data.message || "Erro ao criar conta.", "error");
-        return;
-      }
-
-      showToast("Conta criada! Faça login.", "success");
-      document.getElementById("tab-login").click();
-    } catch {
-      showToast("Servidor indisponível.", "error");
-    } finally {
-      btn.textContent = "CRIAR CONTA";
-      btn.disabled = false;
+    if (!res.ok) {
+      showToast(data.message || "Erro ao criar conta.", "error");
+      return;
     }
-  });
 
+    showToast("Conta criada! Faça login.", "success");
+    tabLogin.click();
+  } catch {
+    showToast("Servidor indisponível.", "error");
+  } finally {
+    registerBtn.textContent = "CRIAR CONTA";
+    registerBtn.disabled = false;
+  }
+});
+
+// Proteção simples de rota no Client-side
 if (localStorage.getItem("token")) {
   window.location.href = "index.html";
 }

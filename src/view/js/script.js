@@ -1,4 +1,7 @@
-const API_URL = "https://gametracker-api-7uvv.onrender.com";
+const API_URL =
+  location.hostname === "localhost"
+    ? "http://localhost:3000"
+    : "https://gametracker-api-7uvv.onrender.com";
 
 const state = {
   games: [],
@@ -322,7 +325,6 @@ document.getElementById("game-form")?.addEventListener("submit", async (e) => {
     };
 
     await saveGame(payload, id || null);
-
   } finally {
     btn.disabled = false;
     btn.textContent = "Salvar Jogo";
